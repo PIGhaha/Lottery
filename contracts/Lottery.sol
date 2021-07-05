@@ -105,10 +105,5 @@ contract Lottery is Ownable{
 		state = _newState;
 		emit LotteryStateChanged(state);
 	}
-	function getHistoryWinners(uint ternNumber) public view returns (mapping(uint => address[])){
-	    return   historyWinners[ternNumber];
-	}
-	function getHistoryWinningNumber(uint ternNumber) public view returns (mapping(uint => uint)) {
-	    return historyWinningNumbers[ternNumber];
-	}
+
 }
