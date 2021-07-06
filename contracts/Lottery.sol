@@ -4,6 +4,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./RandomNumberGenerator.sol";
 
 contract Lottery is Ownable{
@@ -11,12 +12,13 @@ contract Lottery is Ownable{
 	using EnumerableSet for EnumerableSet.AddressSet;
 	using Address for address;
 	using SafeMath for uint;
-
+    
+    IERC20 public DAI;
 	enum LotteryState { Open, Closed, Finished }
 
 	mapping(uint => address[]) entries;
-	mapping(uint => uint)  historyWinningNumbers;
-	mapping(uint => address[]) historyWinners;
+	mapping(uint => uint) public historyWinningNumbers;
+	mapping(uint => address[]) public historyWinners;
 	uint[] numbers;
 	LotteryState public state;
 	uint public bettingEnd;
@@ -46,11 +48,12 @@ contract Lottery is Ownable{
 	}
 
 	//constructor
-	constructor (uint _entryFee, uint _ownerCut, address _randomNumberGenerator) public Ownable() {
+	constructor (uint _entryFee, uint _ownerCut, address _randomNumberGenerator, IERC20 _DAI) public Ownable() {
 		require(_entryFee > 0, "Entry fee must be greater than 0");
 		require(_ownerCut < _entryFee, "Entry fee must be greater than owner cut");
 		require(_randomNumberGenerator != address(0), "Random number generator must be valid address");
 		require(_randomNumberGenerator.isContract(), "Random number generator must be smart contract");
+		DAI = _DAI;
 		entryFee = _entryFee;
 		ownerCut = _ownerCut;
 		randomNumberGenerator = _randomNumberGenerator;
@@ -59,12 +62,13 @@ contract Lottery is Ownable{
 
 	//functions
 	function submitNumber(uint _number) public payable isState(LotteryState.Open) {
-	    require(msg.value >= entryFee, "Minimum entry fee required");
 	    require(block.timestamp < bettingEnd, "betting already ended");
+	    require(DAI.allowance(msg.sender,address(this)) >= entryFee, "not enough allowance");
+	    DAI.transferFrom(msg.sender, address(this), entryFee);
 		entries[_number].push(msg.sender);
 		numbers.push(_number);
 		numberOfEntries++;
-		payable(owner()).transfer(ownerCut);
+		DAI.transfer(owner(), ownerCut);
 		emit NewEntry(msg.sender, _number);
 	}
 
@@ -96,8 +100,8 @@ contract Lottery is Ownable{
 	function _payout(address[] storage winners) private {
 		uint balance = address(this).balance;
 		for (uint index = 0; index < winners.length; index++) {
-			payable(winners[index]).transfer(balance.div(winners.length));
-			historyWinners[roundNumber].push(winners[index]);
+			DAI.transferFrom(address(this),winners[index],DAI.balanceOf(address(this)).div(winners.length));
+		    historyWinners[roundNumber].push(winners[index]);
 		}
 	}
 
@@ -105,5 +109,5 @@ contract Lottery is Ownable{
 		state = _newState;
 		emit LotteryStateChanged(state);
 	}
-
+	
 }
