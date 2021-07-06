@@ -5,6 +5,8 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
+
 import "./RandomNumberGenerator.sol";
 
 contract Lottery is Ownable{
@@ -16,22 +18,22 @@ contract Lottery is Ownable{
     IERC20 public DAI;
 	enum LotteryState { Open, Closed, Finished }
 
-	mapping(uint => address[]) entries;
-	mapping(uint => uint) public historyWinningNumbers;
+	mapping(string => address[]) entries;
+	mapping(uint => string) public historyWinningNumbers;
 	mapping(uint => address[]) public historyWinners;
-	uint[] numbers;
+	string[] numbers;
 	LotteryState public state;
 	uint public bettingEnd;
 	uint public numberOfEntries;
 	uint public entryFee;
 	uint public ownerCut;
-	uint public winningNumber;
+	string public winningNumber;
 	uint public roundNumber;
 	address randomNumberGenerator;
 	bytes32 randomNumberRequestId;
 
 	event LotteryStateChanged(LotteryState newState);
-	event NewEntry(address player, uint number);
+	event NewEntry(address player, string number);
 	event NumberRequested(bytes32 requestId);
 	event NumberDrawn(bytes32 requestId, uint winningNumber);
 	event NewRound(uint roundNumber);
@@ -61,7 +63,7 @@ contract Lottery is Ownable{
 	}
 
 	//functions
-	function submitNumber(uint _number) public payable isState(LotteryState.Open) {
+	function submitNumber(string memory _number) public payable isState(LotteryState.Open) {
 	    require(block.timestamp < bettingEnd, "betting already ended");
 	    require(DAI.allowance(msg.sender,address(this)) >= entryFee, "not enough allowance");
 	    DAI.transferFrom(msg.sender, address(this), entryFee);
@@ -89,9 +91,9 @@ contract Lottery is Ownable{
 
 	function numberDrawn(bytes32 _randomNumberRequestId, uint _randomNumber) public onlyRandomGenerator isState(LotteryState.Closed) {
 		if (_randomNumberRequestId == randomNumberRequestId) {
-			winningNumber = _randomNumber.add(9999).mod(10000);
+			winningNumber = _substring(_toString(_randomNumber), 0, 4);
 			historyWinningNumbers[roundNumber] = winningNumber;
-			_payout(entries[_randomNumber]);
+			_payout(entries[winningNumber]);
 			_changeState(LotteryState.Finished);
 			emit NumberDrawn(_randomNumberRequestId, _randomNumber);
 		}
@@ -109,5 +111,39 @@ contract Lottery is Ownable{
 		state = _newState;
 		emit LotteryStateChanged(state);
 	}
+	function getHistoryWinners(uint ternNumber) public view returns(address[] memory) {
+	    return historyWinners[ternNumber];
+	}
 	
+	function _toString(uint256 value) internal pure returns (string memory) {
+        // Inspired by OraclizeAPI's implementation - MIT licence
+        // https://github.com/oraclize/ethereum-api/blob/b42146b063c7d6ee1358846c198246239e9360e8/oraclizeAPI_0.4.25.sol
+
+        if (value == 0) {
+            return "0";
+        }
+        uint256 temp = value;
+        uint256 digits;
+        while (temp != 0) {
+            digits++;
+            temp /= 10;
+        }
+        bytes memory buffer = new bytes(digits);
+        while (value != 0) {
+            digits -= 1;
+            buffer[digits] = bytes1(uint8(48 + uint256(value % 10)));
+            value /= 10;
+        }
+        return string(buffer);
+    }
+    
+    function _substring(string memory str, uint startIndex, uint endIndex) internal returns (string memory) {
+        bytes memory strBytes = bytes(str);
+        bytes memory result = new bytes(endIndex-startIndex);
+        for(uint i = startIndex; i < endIndex; i++) {
+            result[i-startIndex] = strBytes[i];
+        }
+        return string(result);
+    }
+
 }
