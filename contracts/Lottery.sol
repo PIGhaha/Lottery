@@ -20,7 +20,7 @@ contract Lottery is Ownable{
 
 	mapping(string => address[]) entries;
 	mapping(uint => string) public historyWinningNumbers;
-	mapping(uint => address[]) public historyWinners;
+	mapping(uint => address[]) historyWinners;
 	string[] numbers;
 	LotteryState public state;
 	uint public bettingEnd;
