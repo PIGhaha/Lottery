@@ -14,7 +14,7 @@ contract Lottery is Ownable{
 	using Address for address;
 	using SafeMath for uint;
     
-    IERC20 public DAI;
+    	IERC20 public DAI;
 	enum LotteryState { Open, Closed, Finished }
 
 	mapping(string => address[]) entries;
