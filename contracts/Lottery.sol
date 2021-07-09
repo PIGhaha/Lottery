@@ -101,7 +101,7 @@ contract Lottery is Ownable{
 	function _payout(address[] storage winners) private {
 		uint balance = address(this).balance;
 		for (uint index = 0; index < winners.length; index++) {
-			DAI.transferFrom(address(this),winners[index],DAI.balanceOf(address(this)).div(winners.length));
+			DAI.transfer(winners[index],DAI.balanceOf(address(this)).div(winners.length));
 		    historyWinners[roundNumber].push(winners[index]);
 		}
 	}
