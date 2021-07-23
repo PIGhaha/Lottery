@@ -5,12 +5,12 @@ import { getBigNumber, sleep } from "./utils";
 
 describe("NudgePool", function () {
   before(async function () {
-    const NPSwapAddress = "0x0aF4225CbEB3CCfF7EE8C607538f084F6f419B63";
-    const NudgePoolAddress = "0x0a767FE847a41661BBecf419Bfa484cF185E729A";
-    const NudgePoolStatusAddress = "0x81c9899AC82B807CF66D118AEC09e3dA97eccb9b";
+    const NPSwapAddress = "0x5fbf04D8d05111a9FB4c7e0Afe7B65D096DBcDA8";
+    const NudgePoolAddress = "0xE1731f0209dE242cbb0df1dC995DB0349AA3FBcC";
+    const NudgePoolStatusAddress = "0x0333A29BfBaC4E97dB2076D9BBb379f094D7bDF3";
 
-    this.token1 = "0xe09D4de9f1dCC8A4d5fB19c30Fb53830F8e2a047";
-    this.token2 = "0xDA2E05B28c42995D0FE8235861Da5124C1CE81Dd";
+    this.token1 = "0xD33Dc5D483Ed42bDA6C99506c21114e517eDAFd4";
+    this.token2 = "0xB638F4D59F85a6036870fDB8e031831267DF9FC0";
     this.dgt = "0xB6d7Bf947d4D6321FD863ACcD2C71f022BCFd0eE";
 
     this.signers = await ethers.getSigners();
@@ -50,18 +50,17 @@ describe("NudgePool", function () {
     this.minimumDuration = await this.NudgePool.minimumDuration();
     console.log("minimumDuration: " + this.minimumDuration);
 
-    const setDurationTx = await this.NudgePool.setDuration(180,180,360);
+    const setDurationTx = await this.NudgePool.setDuration(300, 300, 600);
     await setDurationTx.wait();
 
-    expect(await this.NudgePool.auctionDuration()).to.be.equal(180);
-    expect(await this.NudgePool.raisingDuration()).to.be.equal(180);
-    expect(await this.NudgePool.minimumDuration()).to.be.equal(360);
+    expect(await this.NudgePool.auctionDuration()).to.be.equal(300);
+    expect(await this.NudgePool.raisingDuration()).to.be.equal(300);
+    expect(await this.NudgePool.minimumDuration()).to.be.equal(600);
   })
 
   it("Create pool", async function () {
     const stage = await this.NudgePoolStatus.getPoolStage(this.token1, this.token2);
     // Return while not at finish stage
-
     if (stage != 0) {
       return
     }
@@ -83,6 +82,7 @@ describe("NudgePool", function () {
     // Expect right ip address
     expect(await this.NudgePoolStatus.getIPAddress(
       this.token1, this.token2)).to.be.equal(this.ipAccount1.address);
+    console.log("IPAddress" + this.NudgePoolStatus.getIPAddress(this.token1, this.token2) + "create pool")
     // Expect at auction stage
     expect(await this.NudgePoolStatus.getPoolStage(
       this.token1, this.token2)).to.be.equal(2);
@@ -111,6 +111,7 @@ describe("NudgePool", function () {
     // Expect right ip address
     expect(await this.NudgePoolStatus.getIPAddress(
       this.token1, this.token2)).to.be.equal(this.ipAccount2.address);
+    console.log("IPAddress" + this.NudgePoolStatus.getIPAddress(this.token1, this.token2) + "create pool")
     // Expect right ip token amount
     expect(await this.NudgePoolStatus.getIPTokensAmount(
       this.token1, this.token2)).to.be.equal(getBigNumber(20000));
@@ -128,7 +129,7 @@ describe("NudgePool", function () {
     let transit = await this.NudgePoolStatus.getStageTransit(
     this.token1, this.token2);
     while (transit == false) {
-      await sleep(180);
+      await sleep(60000);
       transit = await this.NudgePoolStatus.getStageTransit(
         this.token1, this.token2);
     }
@@ -257,7 +258,7 @@ describe("NudgePool", function () {
     let transit = await this.NudgePoolStatus.getStageTransit(
     this.token1, this.token2);
     while (transit == false) {
-      await sleep(180);
+      await sleep(60000);
       transit = await this.NudgePoolStatus.getStageTransit(
         this.token1, this.token2);
     }
@@ -475,7 +476,7 @@ describe("NudgePool", function () {
     let transit = await this.NudgePoolStatus.getStageTransit(
     this.token1, this.token2);
     while (transit == false) {
-      await sleep(360);
+      await sleep(60000);
       transit = await this.NudgePoolStatus.getStageTransit(
         this.token1, this.token2);
     }
@@ -494,12 +495,12 @@ describe("NudgePool", function () {
 
   it("Recover Duration", async function () {
     const reDurationTx = await this.NudgePool.setDuration(this.auctionDuration,
-                                   this.raisingDuration,this.minimumDuration)
+                                   this.raisingDuration,this.minimumDuration);
     await reDurationTx.wait();
-;
+
     expect(await this.NudgePool.auctionDuration()).to.be.equal(this.auctionDuration);
     expect(await this.NudgePool.raisingDuration()).to.be.equal(this.raisingDuration);
     expect(await this.NudgePool.minimumDuration()).to.be.equal(this.minimumDuration);
     console.log("DurationRecover")
-  })
+  });
 });
