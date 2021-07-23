@@ -65,8 +65,8 @@ describe("NudgePool", function () {
       return
     }
 
-    await this.Token1.connect(this.ipAccount1).approve(this.NudgePool.address, getBigNumber(10000));
-
+    const approveTX = await this.Token1.connect(this.ipAccount1).approve(this.NudgePool.address, getBigNumber(10000000));
+    await approveTX.wait();
     const createTX  = await this.NudgePool.connect(this.ipAccount1).createPool(
       this.ipAccount1.address,
       this.token1,
@@ -96,9 +96,12 @@ describe("NudgePool", function () {
       return
     }
 
-    await this.Token1.connect(this.ipAccount2).approve(this.NudgePool.address, getBigNumber(20000));
-    await this.DGT.connect(this.ipAccount2).approve(this.NudgePool.address, getBigNumber(30));
-
+    const approveToken1TX = await this.Token1.connect(this.ipAccount2).approve(
+                                      this.NudgePool.address, getBigNumber(20000));
+    const approveDGT = await this.DGT.connect(this.ipAccount2).approve(
+                                 this.NudgePool.address, getBigNumber(30));
+    await approveToken1TX.wait();
+    await approveDGT.wait();
     const auctionTx = await this.NudgePool.connect(this.ipAccount2).auctionPool(
       this.ipAccount2.address,
       this.token1,
